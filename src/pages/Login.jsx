@@ -37,26 +37,32 @@ export default function Login() {
   const passwordError = touch.password && password.length < 6 ? "A senha deve ter ao menos 6 caracteres." : "";
   const formValid     = emailRe.test(email) && password.length >= 6;
 
-  async function handleSubmit(e) {
-    e.preventDefault();
-    setTouch({ email: true, password: true });
-    setErr("");
-    if (!formValid) return;
+// ... topo do arquivo permanece igual
 
-    setLoading(true);
-    try {
-      await login(email.trim(), password);
-      navigate(redirectTo, { replace: true });
-    } catch (e) {
-      const msg =
-        e?.message === "UNAUTHORIZED"
-          ? "E-mail ou senha inválidos."
-          : "Não foi possível entrar. Tente novamente.";
-      setErr(msg);
-    } finally {
-      setLoading(false);
-    }
+async function handleSubmit(e) {
+  e.preventDefault();
+  if (loading) return; // evita duplo submit
+  setTouch({ email: true, password: true });
+  setErr("");
+  if (!formValid) return;
+
+  setLoading(true);
+  try {
+    await login(email.trim(), password);
+    navigate(redirectTo, { replace: true });
+  } catch (e) {
+    // mapeia respostas do backend
+    let msg = "Não foi possível entrar. Tente novamente.";
+    if (e?.status === 401) msg = "E-mail ou senha inválidos.";
+    if (e?.status === 403) msg = "Seu usuário está desativado. Fale com o administrador.";
+    // aproveita mensagem do servidor se existir
+    if (e?.message && e.message !== "LOGIN_FAILED") msg = e.message;
+    setErr(msg);
+  } finally {
+    setLoading(false);
   }
+}
+
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100">

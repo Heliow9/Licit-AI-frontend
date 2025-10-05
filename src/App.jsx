@@ -6,6 +6,7 @@ import Reports from "./pages/Reports";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Cats from './pages/CatsManager'
 import PastaDetalhe from '../src/pages/PastaDetalhe'
+import Config from "./pages/Config";
 export default function App() {
   return (
     <Routes>
@@ -48,6 +49,15 @@ export default function App() {
         element={
           <ProtectedRoute>
             <Reports />
+          </ProtectedRoute>
+        }
+      />
+
+            <Route
+        path="/config"
+        element={
+          <ProtectedRoute>
+            <Config />
           </ProtectedRoute>
         }
       />

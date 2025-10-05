@@ -4,34 +4,75 @@ import { apiFetch, setToken, clearToken, getToken } from '../lib/api';
 const AuthCtx = createContext(null);
 
 export function AuthProvider({ children }) {
-  const [user, setUser]   = useState(null);
-  const [loading, setL]   = useState(true);
+  const [user, setUser] = useState(null);
+  const [loading, setL] = useState(true);
+
+  // helper: tenta obter o "me" em /api/me/settings e cai para /api/auth/me
+  async function fetchMe() {
+    // 1ª tentativa: /api/me/settings (novo)
+    try {
+      const r = await apiFetch('/api/me/settings', { auth: true, method: 'GET' });
+      if (r?.user) return r.user;
+    } catch (e) {
+      // segue para o fallback
+    }
+    // 2ª tentativa: /api/auth/me (antigo)
+    const r2 = await apiFetch('/api/auth/me', { auth: true, method: 'GET' });
+    return r2?.user || null;
+  }
 
   useEffect(() => {
-    // tentativa simples de “restaurar” sessão (se tiver token)
     (async () => {
       const tk = getToken();
       if (!tk) { setL(false); return; }
       try {
-        // se tiver endpoint /me, use-o; se não, apenas sinalize logado
-        // const me = await apiFetch('/api/auth/me');
-        setUser({ placeholder: true }); 
+        // garante que o token já está aplicado no client (se sua lib usa isso)
+        setToken(tk);
+        const me = await fetchMe();
+        if (me) setUser(me);
+        else {
+          clearToken();
+          setUser(null);
+        }
       } catch {
         clearToken();
-      } finally { setL(false); }
+        setUser(null);
+      } finally {
+        setL(false);
+      }
     })();
   }, []);
 
   async function login(email, password) {
-    const r = await apiFetch('/api/auth/login', {
-      auth: false,
-      method: 'POST',
-      body: { email, password }
-    });
-    if (!r?.token) throw new Error('Falha no login');
-    setToken(r.token);
-    setUser(r.user || { email });
-    return r;
+    try {
+      const r = await apiFetch('/api/auth/login', {
+        auth: false,
+        method: 'POST',
+        body: { email, password },
+      });
+      if (!r?.token) {
+        const err = new Error('LOGIN_FAILED');
+        err.status = 500;
+        throw err;
+      }
+
+      // persiste token (tua lib já deve injetar em headers após setToken)
+      setToken(r.token);
+
+      // busca o "me" para garantir role/companyId atualizados
+      const me = await fetchMe();
+      const resolvedUser = me || r.user || { email };
+      setUser(resolvedUser);
+
+      return { token: r.token, user: resolvedUser };
+    } catch (e) {
+      // normaliza erro para a UI
+      const status = e?.status || e?.response?.status;
+      const msg = e?.error || e?.message || 'LOGIN_FAILED';
+      const err = new Error(msg);
+      err.status = status;
+      throw err;
+    }
   }
 
   function logout() {

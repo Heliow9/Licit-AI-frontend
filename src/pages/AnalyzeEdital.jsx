@@ -27,12 +27,17 @@ function mdToHtml(md) {
   if (!md) return "";
   const raw = marked.parse(md);
   const clean = DOMPurify.sanitize(raw, { ADD_ATTR: ["target", "rel"] });
-  const normalized = stripInlineSizes(clean);
+  const normalized = stripInlineSizes(clean)
+    // remove qualquer <hr> que venha do markdown ("---")
+    .replace(/<hr\s*\/?>/gi, "")
+    .replace(/<p>(?:\s|&nbsp;|<br\s*\/?>)*<\/p>/gi, "")
+    .replace(/(<br\s*\/?>\s*){3,}/gi, "<br/><br/>");
   return normalized.replaceAll(
     "<a ",
     '<a target="_blank" rel="noopener noreferrer" '
   );
 }
+
 function formatDate(iso) {
   if (!iso) return "Data indisponível";
   try {
@@ -63,7 +68,7 @@ async function blobUrlFromPdf(url) {
   const res = await fetch(buildUrl(url), {
     method: "GET",
     headers: getAuthHeaders(),
-    credentials: "include",
+    Accept: "application/pdf",
   });
   if (!res.ok) {
     const text = await res.text().catch(() => "");
@@ -111,7 +116,7 @@ function useJobProgress(jobId) {
       es.onopen = () => setConnected(true);
       es.onerror = () => {
         setConnected(false);
-        try { es.close(); } catch {}
+        try { es.close(); } catch { }
         esRef.current = null;
         startPolling();
       };
@@ -120,7 +125,7 @@ function useJobProgress(jobId) {
         try {
           const data = JSON.parse(evt.data);
           setStatus(data);
-        } catch {}
+        } catch { }
       };
 
       es.addEventListener("snapshot", onMsg);
@@ -129,7 +134,7 @@ function useJobProgress(jobId) {
       es.addEventListener("error", onMsg);
 
       const cleanup = () => {
-        try { es.close(); } catch {}
+        try { es.close(); } catch { }
         esRef.current = null;
         stopPolling();
       };
@@ -352,17 +357,15 @@ export default function AnalyzeEdital() {
       <div className="flex justify-center">
         <div className="relative flex w-full sm:w-fit p-1 bg-slate-200 rounded-full">
           <span
-            className={`absolute top-1 bottom-1 w-[calc(50%-4px)] bg-white rounded-full shadow-md transition-transform duration-300 ease-in-out ${
-              mode === "super" ? "translate-x-full" : "translate-x-0"
-            }`}
+            className={`absolute top-1 bottom-1 w-[calc(50%-4px)] bg-white rounded-full shadow-md transition-transform duration-300 ease-in-out ${mode === "super" ? "translate-x-full" : "translate-x-0"
+              }`}
           />
           <button
             type="button"
             onClick={() => setMode("basic")}
             disabled={!!jobId}
-            className={`relative z-10 w-1/2 rounded-full px-4 py-2 text-sm font-semibold transition-colors ${
-              mode === "basic" ? "text-blue-600" : "text-slate-600"
-            } ${jobId ? "opacity-60 cursor-not-allowed" : ""}`}
+            className={`relative z-10 w-1/2 rounded-full px-4 py-2 text-sm font-semibold transition-colors ${mode === "basic" ? "text-blue-600" : "text-slate-600"
+              } ${jobId ? "opacity-60 cursor-not-allowed" : ""}`}
           >
             Análise Rápida
           </button>
@@ -370,9 +373,8 @@ export default function AnalyzeEdital() {
             type="button"
             onClick={() => setMode("super")}
             disabled={!!jobId}
-            className={`relative z-10 w-1/2 rounded-full px-4 py-2 text-sm font-semibold transition-colors ${
-              mode === "super" ? "text-blue-600" : "text-slate-600"
-            } ${jobId ? "opacity-60 cursor-not-allowed" : ""}`}
+            className={`relative z-10 w-1/2 rounded-full px-4 py-2 text-sm font-semibold transition-colors ${mode === "super" ? "text-blue-600" : "text-slate-600"
+              } ${jobId ? "opacity-60 cursor-not-allowed" : ""}`}
           >
             Super Análise
           </button>
@@ -387,9 +389,8 @@ export default function AnalyzeEdital() {
             PDF(s) do Edital
           </label>
           <div
-            className={`mt-2 flex justify-center rounded-lg border-2 border-dashed border-slate-300 px-6 py-10 transition cursor-pointer ${
-              jobId ? "opacity-60 cursor-not-allowed" : "hover:border-blue-500"
-            }`}
+            className={`mt-2 flex justify-center rounded-lg border-2 border-dashed border-slate-300 px-6 py-10 transition cursor-pointer ${jobId ? "opacity-60 cursor-not-allowed" : "hover:border-blue-500"
+              }`}
             role="button"
             tabIndex={0}
             onClick={!jobId ? handleClickEdital : undefined}
@@ -436,9 +437,8 @@ export default function AnalyzeEdital() {
               Anexos e Outros Arquivos (opcional)
             </label>
             <div
-              className={`mt-2 flex justify-center rounded-lg border-2 border-dashed border-slate-300 px-6 py-10 transition cursor-pointer ${
-                jobId ? "opacity-60 cursor-not-allowed" : "hover:border-blue-500"
-              }`}
+              className={`mt-2 flex justify-center rounded-lg border-2 border-dashed border-slate-300 px-6 py-10 transition cursor-pointer ${jobId ? "opacity-60 cursor-not-allowed" : "hover:border-blue-500"
+                }`}
               role="button"
               tabIndex={0}
               onClick={!jobId ? handleClickAnexos : undefined}
@@ -573,15 +573,14 @@ export default function AnalyzeEdital() {
               <article
                 className={[
                   "prose prose-sm max-w-full",
-                  "break-words hyphens-auto whitespace-pre-wrap",
-                  "[&_*]:min-w-0",
-                  "[&_img]:max-w-full [&_img]:h-auto",
-                  "[&_table]:block [&_table]:w-full [&_table]:overflow-x-auto",
-                  "prose-pre:overflow-x-auto [&_pre]:!whitespace-pre [&_code]:break-words",
-                  "prose-a:break-all",
+                  "break-words hyphens-auto whitespace-normal leading-relaxed",
+                  "[&_p]:my-2 [&_ul]:my-2 [&_li]:my-1",
+                  "[&_h1]:mt-4 [&_h1]:mb-2 [&_h2]:mt-3 [&_h2]:mb-2 [&_h3]:mt-2 [&_h3]:mb-1",
+                  // ...
                 ].join(" ")}
                 dangerouslySetInnerHTML={{ __html: mdToHtml(report) }}
               />
+
             </div>
           </div>
         )}
@@ -633,7 +632,7 @@ export default function AnalyzeEdital() {
 
       {/* Histórico / Relatórios anteriores */}
       <div className="wrap-anywhere">
-        <ReportsList pageSize={10} />
+        <ReportsList pageSize={10} refresh={pdfLoading} />
       </div>
     </div>
   );

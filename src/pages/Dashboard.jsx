@@ -1,6 +1,8 @@
+// src/pages/Dashboard.jsx
 import React, { useState, useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import api from '../api'; // <<-- IMPORTANTE: Verifique se o caminho para seu cliente API está correto.
+import api from '../api'; // <<-- verifique se o caminho do cliente API está correto
+import { useAuth } from '../auth/AuthContext';
 
 // --- DADOS MOCK (Apenas para o que ainda não vem da API) ---
 const MOCK_KPIS = { totalPastas: 12, totalCats: 148, editaisMes: 22, editaisDia: 3, editaisSemana: 15 };
@@ -12,28 +14,6 @@ const MOCK_RECENT_REPORTS = [
 function getKpis() { return MOCK_KPIS; }
 function getRecentReports() { return MOCK_RECENT_REPORTS; }
 
-// <<-- NOVO: MOCK DE AUTENTICAÇÃO -->>
-// Em uma aplicação real, isso viria de um Context API para gerenciar o estado global do usuário.
-const useAuth = () => {
-  // Simula um usuário logado. Substitua pelos dados reais.
-  const user = {
-    name: 'Helio Livramento',
-  };
-
-  // Simula a função de logout.
-  const logout = () => {
-    console.log("Usuário deslogado!");
-    // Aqui você adicionaria a lógica real:
-    // - Limpar tokens (localStorage/sessionStorage)
-    // - Chamar a API de logout
-    // - Redirecionar para a página de login (ex: window.location.href = '/login';)
-    alert('Você foi desconectado.');
-  };
-
-  return { user, logout };
-};
-
-
 // --- ÍCONES (SVG) ---
 const FolderIcon = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"></path></svg>);
 const FileTextIcon = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path><path d="M14 2v4a2 2 0 0 0 2 2h4"></path><path d="M10 9H8"></path><path d="M16 13H8"></path><path d="M16 17H8"></path></svg>);
@@ -43,8 +23,13 @@ const SearchIcon = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" w
 const ChevronRightIcon = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m9 18 6-6-6-6"></path></svg>);
 const PlusIcon = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>);
 const DownloadIcon = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" x2="12" y1="15" y2="3"></line></svg>);
-// <<-- NOVO: Ícone de Logout -->>
 const LogOutIcon = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" x2="9" y1="12" y2="12"></line></svg>);
+const SettingsIcon = ({ className }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z" />
+    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.08a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.08a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06A2 2 0 1 1 7.03 3.4l.06.06c.48.48 1.17.62 1.82.33A1.65 1.65 0 0 0 10.41 2.3V2a2 2 0 1 1 4 0v.08c0 .66.39 1.25 1 1.51.65.28 1.34.14 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06c-.48.48-.62 1.17-.33 1.82.26.61.85 1 1.51 1H21a2 2 0 1 1 0 4h-.08c-.66 0-1.25.39-1.51 1Z" />
+  </svg>
+);
 
 // --- COMPONENTES DE UI REFINADOS ---
 function Card({ children, className = '' }) {
@@ -140,25 +125,34 @@ function Pagination({ page, totalPages, onPageChange, compact }) {
 function formatDate(iso) {
   try { return new Date(iso).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" }); } catch { return "—"; }
 }
+function formatCnpj(cnpj) {
+  const digits = String(cnpj || '').replace(/\D/g, '');
+  if (digits.length !== 14) return '—';
+  return digits.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5');
+}
 
 // --- PÁGINA PRINCIPAL DO DASHBOARD ---
 export default function Dashboard() {
-  const { user, logout } = useAuth(); // <<-- NOVO: Obter usuário e função de logout
+  const { user, logout } = useAuth(); // usuário real do contexto
   const kpis = useMemo(() => getKpis(), []);
   const recent = useMemo(() => getRecentReports(), []);
 
-  // <<-- ESTADOS PARA DADOS REAIS, LOADING E ERRO -->>
+  // Estados para dados reais, loading e erro
   const [pastas, setPastas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-
-    // >>> NOVO: total real de CATs (do backend)
+  // Total real de CATs (do backend)
   const [catsTotal, setCatsTotal] = useState(null);
   const [catsTotalLoading, setCatsTotalLoading] = useState(true);
   const [catsTotalError, setCatsTotalError] = useState(null);
-  
-  // <<-- useEffect PARA BUSCAR DADOS DA API -->>
+
+  // Empresa vinculada
+  const [company, setCompany] = useState(null);
+  const [companyLoading, setCompanyLoading] = useState(true);
+  const [companyError, setCompanyError] = useState(null);
+
+  // Buscar pastas
   useEffect(() => {
     const fetchPastas = async () => {
       try {
@@ -174,37 +168,51 @@ export default function Dashboard() {
       }
     };
     fetchPastas();
-  }, []); // Array vazio `[]` garante que a busca ocorra apenas uma vez.
+  }, []);
 
-useEffect(() => {
-  const fetchCatsCount = async () => {
-    try {
-      setCatsTotalError(null);
-      setCatsTotalLoading(true);
+  // Buscar total de CATs
+  useEffect(() => {
+    const fetchCatsCount = async () => {
+      try {
+        setCatsTotalError(null);
+        setCatsTotalLoading(true);
+        const token = localStorage.getItem("token");
+        const { data } = await api.get("/api/cats/count", {
+          headers: { Authorization: token ? `Bearer ${token}` : "" },
+        });
+        setCatsTotal(typeof data?.total === "number" ? data.total : 0);
+      } catch (err) {
+        console.error("Erro ao obter total de CATs:", err);
+        setCatsTotalError("Falha ao carregar total de CATs.");
+        setCatsTotal(0);
+      } finally {
+        setCatsTotalLoading(false);
+      }
+    };
+    fetchCatsCount();
+  }, []);
 
-      // Pega o token salvo no localStorage
-      const token = localStorage.getItem("token");
-
-      // Faz a chamada incluindo Authorization
-      const { data } = await api.get("/api/cats/count", {
-        headers: {
-          Authorization: token ? `Bearer ${token}` : "",
-        },
-      });
-
-      setCatsTotal(typeof data?.total === "number" ? data.total : 0);
-    } catch (err) {
-      console.error("Erro ao obter total de CATs:", err);
-      setCatsTotalError("Falha ao carregar total de CATs.");
-      setCatsTotal(0);
-    } finally {
-      setCatsTotalLoading(false);
-    }
-  };
-
-  fetchCatsCount();
-}, []);
-
+  // Buscar empresa vinculada
+  useEffect(() => {
+    const fetchCompany = async () => {
+      try {
+        setCompanyError(null);
+        setCompanyLoading(true);
+        const token = localStorage.getItem("token");
+        const { data } = await api.get("/api/company/my", {
+          headers: { Authorization: token ? `Bearer ${token}` : "" },
+        });
+        setCompany(data?.company || null);
+      } catch (err) {
+        console.error("Erro ao obter empresa:", err);
+        setCompanyError("Falha ao carregar empresa.");
+        setCompany(null);
+      } finally {
+        setCompanyLoading(false);
+      }
+    };
+    fetchCompany();
+  }, []);
 
   const [compact, setCompact] = useState(false);
   const [q, setQ] = useState("");
@@ -213,7 +221,7 @@ useEffect(() => {
   const pageSize = compact ? 10 : 8;
 
   const filtered = useMemo(() => {
-    let arr = pastas; // <<-- Usa o estado `pastas` que veio da API
+    let arr = pastas;
     if (q.trim()) {
       const s = q.toLowerCase();
       arr = arr.filter(p => p.nome.toLowerCase().includes(s) || (p.descricao?.toLowerCase() || "").includes(s));
@@ -244,7 +252,7 @@ useEffect(() => {
   return (
     <div className={`bg-slate-50 min-h-screen font-sans ${mainPadding}`}>
       <div className={sectionGap}>
-        {/* <<-- NOVO: Cabeçalho atualizado com nome de usuário e logout -->> */}
+        {/* Cabeçalho com usuário + empresa */}
         <header className={`${wrap} flex flex-col gap-4 md:flex-row md:items-center md:justify-between`}>
           <div>
             <h1 className={`${h1Class} font-bold tracking-tight text-slate-900`}>Dashboard</h1>
@@ -254,6 +262,10 @@ useEffect(() => {
             <div className="flex items-center gap-2">
               <CompactToggle checked={compact} onChange={setCompact} />
               <Button as={Link} to="/cats" variant="secondary" size={compact ? 'sm' : 'md'}>Gerenciar CATs</Button>
+              <Button as={Link} to="/config" variant="secondary" size={compact ? 'sm' : 'md'}>
+                <SettingsIcon className="h-4 w-4" />
+                <span>Configurações</span>
+              </Button>
               <Button as={Link} to="/analisar" variant="primary" size={compact ? 'sm' : 'md'}>
                 <PlusIcon className="h-4 w-4" />
                 <span>Analisar Edital</span>
@@ -263,7 +275,13 @@ useEffect(() => {
             <div className="flex items-center gap-3">
               <div className="text-right">
                 <p className="font-semibold text-sm text-slate-800 leading-tight">{user?.name || 'Usuário'}</p>
-                <p className="text-xs text-slate-500">Bem-vindo(a)</p>
+                <p className="text-[11px] leading-snug text-slate-500 max-w-[260px] truncate">
+                  {companyLoading
+                    ? 'Carregando empresa...'
+                    : company
+                      ? `${company.name} · CNPJ ${formatCnpj(company.cnpj)}`
+                      : (companyError || 'Sem empresa vinculada')}
+                </p>
               </div>
               <Button onClick={logout} variant="ghost" size="sm" className="h-9 w-9 p-0 text-slate-500 hover:bg-rose-50 hover:text-rose-600" aria-label="Sair">
                 <LogOutIcon className="h-5 w-5" />
@@ -360,7 +378,7 @@ useEffect(() => {
                 </div>
               </div>
 
-              {/* <<-- RENDERIZAÇÃO CONDICIONAL (LOADING / ERRO / DADOS) -->> */}
+              {/* Renderização condicional */}
               {loading && (
                 <div className="text-center rounded-xl border-2 border-dashed border-slate-200 bg-white py-16">
                   <p className="text-slate-600 font-medium">Carregando pastas do servidor...</p>

@@ -1,13 +1,119 @@
 <!doctype html>
-<html lang="en">
+<html lang="pt-BR" dir="ltr">
   <head>
+    <!-- Charset & rendering -->
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Vite + React</title>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+
+    <!-- Primary SEO -->
+    <title>Licit‑Ai — Assistente para Editais, Propostas e Habilitação</title>
+    <meta name="description" content="Licit‑Ai ajuda sua equipe a ler, extrair requisitos e organizar documentos de licitações com IA — PCMSO, SST, habilitação técnica e administrativa." />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
+    <link rel="canonical" href="https://licit-ai.realenergy.com.br/" />
+
+    <!-- Internationalization (adjust/duplicate as needed) -->
+    <link rel="alternate" href="https://licit-ai.realenergy.com.br/" hreflang="pt-BR" />
+    <link rel="alternate" href="https://licit-ai.realenergy.com.br/en/" hreflang="en" />
+    <link rel="alternate" href="https://licit-ai.realenergy.com.br/" hreflang="x-default" />
+
+    <!-- Open Graph / Social -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Licit‑Ai" />
+    <meta property="og:title" content="Licit‑Ai — Assistente para Editais, Propostas e Habilitação" />
+    <meta property="og:description" content="Automatize leitura de editais, extração de requisitos e montagem de dossiês de habilitação com IA." />
+    <meta property="og:url" content="https://licit-ai.realenergy.com.br/" />
+    <meta property="og:image" content="/og/licit-ai-1200x630.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Licit‑Ai — Assistente para Editais, Propostas e Habilitação" />
+    <meta name="twitter:description" content="Leitura e extração de requisitos dos editais com IA, pronto para seu fluxo de licitações." />
+    <meta name="twitter:image" content="/og/licit-ai-1200x630.png" />
+
+    <!-- App identity / PWA -->
+
+    <meta name="application-name" content="Licit‑Ai" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Licit‑Ai" />
+    <meta name="theme-color" content="#0b5fff" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a3acc" media="(prefers-color-scheme: dark)" />
+    <link rel="manifest" href="/site.webmanifest" crossorigin="use-credentials" />
+
+    <!-- Icons -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16x16.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png" />
+    <link rel="mask-icon" href="/icons/safari-pinned-tab.svg" color="#0b5fff" />
+
+    <!-- Performance hints (adjust domains you actually use) -->
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <!-- Example font preload: replace with your actual font file(s) -->
+    <!-- <link rel="preload" as="font" href="/fonts/Inter-Variable.woff2" type="font/woff2" crossorigin /> -->
+
+    <!-- Vite will inject modulepreload/polyfills as needed in build -->
+
+    <!-- Security: A conservative CSP for production (tune for your domains). Remove or relax during local dev if it breaks HMR. -->
+    <!--
+    <meta http-equiv="Content-Security-Policy"
+          content="default-src 'self'; img-src 'self' data: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; script-src 'self'; connect-src 'self' https://api.licit-ai.realenergy.com.br https://vitals.vercel-insights.com;">
+    -->
+
+    <!-- Sitemap (helps discovery) -->
+    <link rel="sitemap" type="application/xml" title="Sitemap" href="/sitemap.xml" />
+
+    <!-- Structured Data: WebApplication (adjust org/name/url/logo) -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "Licit‑Ai",
+        "applicationCategory": "BusinessApplication",
+        "operatingSystem": "Web",
+        "url": "https://licit-ai.realenergy.com.br/",
+        "description": "Assistente de IA para análise de editais, extração de requisitos e montagem de dossiês de habilitação.",
+        "publisher": {
+          "@type": "Organization",
+          "name": "Real Energy Ltda.",
+          "url": "https://www.realenergy.com.br",
+          "logo": {
+            "@type": "ImageObject",
+            "url": "/icons/android-chrome-512x512.png",
+            "width": 512,
+            "height": 512
+          }
+        }
+      }
+    </script>
+
+    <!-- Breadcrumbs (optional: add on inner routes with SSR/prerender) -->
+    <!-- <script type="application/ld+json">{ ... }</script> -->
+
+    <!-- Color-scheme to assist UA rendering -->
+    <meta name="color-scheme" content="light dark" />
+
   </head>
   <body>
+    <noscript>Para usar o Licit‑Ai, ative o JavaScript.</noscript>
     <div id="root"></div>
+
+    <!-- Main bundle -->
     <script type="module" src="/src/main.jsx"></script>
+
+    <!-- Optional: web vitals / analytics (load after interaction) -->
+    <!--
+    <script>
+      window.addEventListener('load', () => {
+        import('/src/analytics.js').catch(() => {});
+      });
+    </script>
+    -->
   </body>
 </html>
+
+

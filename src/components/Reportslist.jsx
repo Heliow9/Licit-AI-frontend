@@ -39,7 +39,7 @@ async function downloadPdf(url, filename = "Relatorio.pdf") {
 }
 
 /* ========= componente ========= */
-export default function ReportsList({ pageSize = 10, initialQuery = "" }) {
+export default function ReportsList({ pageSize = 10, initialQuery = "", refresh }) {
   const [items, setItems] = useState([]);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
@@ -67,7 +67,7 @@ export default function ReportsList({ pageSize = 10, initialQuery = "" }) {
       }
     })();
     return () => { cancel = true; };
-  }, [page, pageSize]);
+  }, [page, pageSize, refresh ]);
 
   function onSearchSubmit(e) {
     e.preventDefault();
