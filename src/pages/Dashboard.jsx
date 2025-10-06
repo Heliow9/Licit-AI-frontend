@@ -153,22 +153,26 @@ export default function Dashboard() {
   const [companyError, setCompanyError] = useState(null);
 
   // Buscar pastas
-  useEffect(() => {
-    const fetchPastas = async () => {
-      try {
-        setError(null);
-        setLoading(true);
-        const response = await api.get('/api/pastas');
-        setPastas(response.data);
-      } catch (err) {
-        console.error("Erro ao buscar pastas:", err);
-        setError("Não foi possível carregar as pastas. Verifique a conexão com a API.");
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchPastas();
-  }, []);
+useEffect(() => {
+  const fetchPastas = async () => {
+    try {
+      setError(null);
+      setLoading(true);
+      const token = localStorage.getItem('token');
+      const response = await api.get('/api/pastas', {
+        headers: { Authorization: token ? `Bearer ${token}` : '' },
+      });
+      setPastas(response.data || []);
+    } catch (err) {
+      console.error("Erro ao buscar pastas:", err);
+      setError("Não foi possível carregar as pastas. Verifique a conexão com a API.");
+    } finally {
+      setLoading(false);
+    }
+  };
+  fetchPastas();
+}, []);
+
 
   // Buscar total de CATs
   useEffect(() => {
