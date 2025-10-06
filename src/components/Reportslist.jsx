@@ -14,10 +14,13 @@ function buildUrl(u) {
   return /^https?:\/\//i.test(u) ? u : `${API_BASE}${u}`;
 }
 async function blobUrlFromPdf(url) {
-  const res = await fetch(buildUrl(url), { headers: getAuthHeaders(), credentials: "include" });
+  const res = await fetch(buildUrl(url), {
+    headers: getAuthHeaders(),
+    credentials: "include",
+  });
   if (!res.ok) {
     const text = await res.text().catch(() => "");
-    throw new Error(`Falha ao abrir PDF (${res.status}) ${text?.slice(0,120)}`);
+    throw new Error(`Falha ao abrir PDF (${res.status}) ${text?.slice(0, 120)}`);
   }
   const blob = await res.blob();
   return URL.createObjectURL(blob);
@@ -47,7 +50,10 @@ export default function ReportsList({ pageSize = 10, initialQuery = "", refresh 
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
 
-  const totalPages = useMemo(() => Math.max(1, Math.ceil(total / pageSize)), [total, pageSize]);
+  const totalPages = useMemo(
+    () => Math.max(1, Math.ceil(total / pageSize)),
+    [total, pageSize]
+  );
 
   useEffect(() => {
     let cancel = false;
@@ -55,8 +61,16 @@ export default function ReportsList({ pageSize = 10, initialQuery = "", refresh 
       setLoading(true);
       setErr("");
       try {
-        // ⚠️ rota correta do histórico
-        const data = await apiFetch(`/api/edital/analisar/history?page=${page}&pageSize=${pageSize}`);
+        // monta querystring com page, pageSize e q (se houver)
+        const params = new URLSearchParams({
+          page: String(page),
+          pageSize: String(pageSize),
+        });
+        if (q) params.set("q", q);
+
+        // rota do histórico
+        const data = await apiFetch(`/api/edital/analisar/history?${params.toString()}`);
+
         if (cancel) return;
         setItems(Array.isArray(data.items) ? data.items : []);
         setTotal(Number.isFinite(data.total) ? data.total : 0);
@@ -66,15 +80,16 @@ export default function ReportsList({ pageSize = 10, initialQuery = "", refresh 
         if (!cancel) setLoading(false);
       }
     })();
-    return () => { cancel = true; };
-  }, [page, pageSize, refresh ]);
+    return () => {
+      cancel = true;
+    };
+  }, [page, pageSize, q, refresh]);
 
   function onSearchSubmit(e) {
     e.preventDefault();
     const nv = e.target.q.value.trim();
     setPage(1);
     setQ(nv);
-    // (se quiser filtrar no back, adapte a rota acima para aceitar ?q=)
   }
 
   return (
@@ -105,12 +120,17 @@ export default function ReportsList({ pageSize = 10, initialQuery = "", refresh 
       ) : (
         <>
           <ul className="divide-y">
-            {items.map((it) => {
-              // o back já envia pdfUrl (/api/edital/report/<file>.pdf) e filename
-              const url = it.pdfUrl || it.url; 
+            {items.map((it, idx) => {
+              const url = it.pdfUrl || it.url;
               const titulo = it.title || it.filename || "Relatório";
+              const key = it.id || it._id || `${titulo}-${idx}`;
+              const disabled = !url;
+
               return (
-                <li key={it.id || it._id} className="flex flex-col gap-2 py-3 md:flex-row md:items-center md:justify-between">
+                <li
+                  key={key}
+                  className="flex flex-col gap-2 py-3 md:flex-row md:items-center md:justify-between"
+                >
                   <div className="min-w-0">
                     <p className="truncate font-medium">{titulo}</p>
                     <p className="text-xs text-gray-500">
@@ -120,15 +140,19 @@ export default function ReportsList({ pageSize = 10, initialQuery = "", refresh 
                   <div className="flex shrink-0 gap-2">
                     <button
                       type="button"
+                      disabled={disabled}
                       onClick={() => openPdfInNewTab(url)}
-                      className="inline-flex items-center rounded-lg border px-3 py-1.5 text-sm hover:bg-gray-50"
+                      className="inline-flex items-center rounded-lg border px-3 py-1.5 text-sm hover:bg-gray-50 disabled:opacity-50"
+                      title={disabled ? "Sem URL de PDF" : "Abrir em nova aba"}
                     >
                       Abrir
                     </button>
                     <button
                       type="button"
+                      disabled={disabled}
                       onClick={() => downloadPdf(url, it.filename || "Relatorio.pdf")}
-                      className="inline-flex items-center rounded-lg bg-blue-600 px-3 py-1.5 text-sm text-white hover:bg-blue-700"
+                      className="inline-flex items-center rounded-lg bg-blue-600 px-3 py-1.5 text-sm text-white hover:bg-blue-700 disabled:opacity-50"
+                      title={disabled ? "Sem URL de PDF" : "Baixar PDF"}
                     >
                       Baixar PDF
                     </button>
@@ -171,5 +195,7 @@ function formatDate(iso) {
   try {
     const d = new Date(iso);
     return d.toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
-  } catch { return "Data inválida"; }
+  } catch {
+    return "Data inválida";
+  }
 }
