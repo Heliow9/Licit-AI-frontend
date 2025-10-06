@@ -1,4 +1,4 @@
-import ReportsList from "../components/ReportsList";
+import ReportsList from "../components/ReportsList.jsx";
 
 export default function ReportsPage() {
   return (
