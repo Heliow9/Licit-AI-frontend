@@ -1,5 +1,10 @@
-const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:3001";
+const isProd = import.meta.env.PROD;
+const API_BASE =
+  import.meta.env.VITE_API_BASE ??
+  import.meta.env.VITE_API_URL ??
+  (isProd ? "https://licit-ai-api.onrender.com" : "http://localhost:3001"); // em prod NUNCA força localhost
 
+console.log("[API_BASE]", API_BASE || "(same-origin)");
 export function getToken() {
   return localStorage.getItem("token") || "";
 }
