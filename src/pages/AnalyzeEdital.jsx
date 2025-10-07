@@ -28,7 +28,6 @@ function mdToHtml(md) {
   const raw = marked.parse(md);
   const clean = DOMPurify.sanitize(raw, { ADD_ATTR: ["target", "rel"] });
   const normalized = stripInlineSizes(clean)
-    // remove qualquer <hr> que venha do markdown ("---")
     .replace(/<hr\s*\/?>/gi, "")
     .replace(/<p>(?:\s|&nbsp;|<br\s*\/?>)*<\/p>/gi, "")
     .replace(/(<br\s*\/?>\s*){3,}/gi, "<br/><br/>");
@@ -54,9 +53,10 @@ function cleanErrorMessage(msg) {
   return msg.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
 }
 
-/* ========================= Helpers PDF (fetch -> blob) ========================= */
+/* ========================= Auth helpers ========================= */
+const getToken = () => localStorage.getItem("token") || "";          // ✅
 function getAuthHeaders() {
-  const token = localStorage.getItem("token") || "";
+  const token = getToken();
   const headers = {};
   if (token) headers["Authorization"] = `Bearer ${token}`;
   return headers;
@@ -64,6 +64,8 @@ function getAuthHeaders() {
 function buildUrl(u) {
   return /^https?:\/\//i.test(u) ? u : `${API_BASE}${u}`;
 }
+
+/* ========================= Helpers PDF (fetch -> blob) ========================= */
 async function blobUrlFromPdf(url) {
   const res = await fetch(buildUrl(url), {
     method: "GET",
@@ -104,19 +106,22 @@ function useJobProgress(jobId) {
   useEffect(() => {
     if (!jobId) return;
 
-    // Se sua API roda em host diferente, use URL absoluta:
-    const streamUrl = `${API_BASE}/api/edital/analisar/stream/${jobId}`;
+    // ✅ passa o token na query (EventSource não envia Authorization)
+    const token = getToken();                                                   // ✅
+    const q = token ? `?token=${encodeURIComponent(token)}` : "";               // ✅
+    const streamUrl = `${API_BASE}/api/edital/analisar/stream/${jobId}${q}`;    // ✅
+
     let usingPolling = false;
 
     try {
-      // EventSource não aceita headers customizados; se rota exigir auth por header, vai cair no polling.
-      const es = new EventSource(streamUrl, { withCredentials: true });
+      // Sem withCredentials: o auth vai na query
+      const es = new EventSource(streamUrl);                                    // ✅
       esRef.current = es;
 
       es.onopen = () => setConnected(true);
       es.onerror = () => {
         setConnected(false);
-        try { es.close(); } catch { }
+        try { es.close(); } catch {}
         esRef.current = null;
         startPolling();
       };
@@ -125,7 +130,7 @@ function useJobProgress(jobId) {
         try {
           const data = JSON.parse(evt.data);
           setStatus(data);
-        } catch { }
+        } catch {}
       };
 
       es.addEventListener("snapshot", onMsg);
@@ -134,7 +139,7 @@ function useJobProgress(jobId) {
       es.addEventListener("error", onMsg);
 
       const cleanup = () => {
-        try { es.close(); } catch { }
+        try { es.close(); } catch {}
         esRef.current = null;
         stopPolling();
       };
@@ -260,10 +265,17 @@ export default function AnalyzeEdital() {
       for (const f of editalFiles) form.append("editalPdf", f);
       if (mode === "super") for (const f of anexosFiles) form.append("arquivos[]", f);
 
-      const j = await apiFetch("/api/edital/analisar/start", {
+      // ✅ use fetch direto para garantir Authorization com FormData
+      const res = await fetch(buildUrl("/api/edital/analisar/start"), {
         method: "POST",
+        headers: getAuthHeaders(),               // não setar Content-Type com FormData!
         body: form,
       });
+      if (!res.ok) {
+        const t = await res.text().catch(() => "");
+        throw new Error(`HTTP ${res.status} ${t}`);
+      }
+      const j = await res.json();
 
       if (!j?.jobId) throw new Error("Falha ao iniciar job de análise.");
       setJobId(j.jobId);
@@ -289,6 +301,7 @@ export default function AnalyzeEdital() {
     setError("");
     setPdfLoading(true);
     try {
+      // pode ficar com apiFetch se ele já injeta Authorization
       const j = await apiFetch("/api/edital/gerar-pdf", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -300,7 +313,7 @@ export default function AnalyzeEdital() {
         const next = Array.isArray(prev) ? [...prev] : [];
         if (!next.find((x) => x.url === j.url)) {
           next.unshift({
-            url: j.url, // ex.: /api/edital/report/<file>.pdf
+            url: j.url,
             filename: j.filename || "Relatorio_de_Viabilidade.pdf",
           });
         }
@@ -576,11 +589,9 @@ export default function AnalyzeEdital() {
                   "break-words hyphens-auto whitespace-normal leading-relaxed",
                   "[&_p]:my-2 [&_ul]:my-2 [&_li]:my-1",
                   "[&_h1]:mt-4 [&_h1]:mb-2 [&_h2]:mt-3 [&_h2]:mb-2 [&_h3]:mt-2 [&_h3]:mb-1",
-                  // ...
                 ].join(" ")}
                 dangerouslySetInnerHTML={{ __html: mdToHtml(report) }}
               />
-
             </div>
           </div>
         )}
