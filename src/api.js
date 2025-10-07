@@ -1,13 +1,16 @@
 // src/api.js
 import axios from "axios";
 
+const isProd = import.meta.env.PROD;
 const API_BASE =
   import.meta.env.VITE_API_BASE ??
-  import.meta.env.VITE_API_URL ??                // compat com nome antigo
-  (import.meta.env.DEV ? "http://localhost:3001" : "");
+  import.meta.env.VITE_API_URL ??
+  (isProd ? "https://licit-ai-api.onrender.com" : "http://localhost:3001"); // em prod NUNCA força localhost
+
+console.log("[API_BASE]", API_BASE || "(same-origin)");
 
 const api = axios.create({
-  baseURL: API_BASE,       // se "", as chamadas ficam relativas ao domínio atual
+  baseURL: API_BASE,
   timeout: 120000,
   withCredentials: true,
 });
