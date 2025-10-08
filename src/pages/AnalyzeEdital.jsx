@@ -7,7 +7,7 @@ import { apiFetch } from "../lib/api";
 import ReportsList from "../components/ReportsList";
 
 /* ========================= Base da API ========================= */
-const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:3001";
+const API_BASE = import.meta.env.VITE_API_BASE || "https://licit-ai-api.onrender.com";
 
 /* ========================= Utils de Markdown ========================= */
 marked.setOptions({ breaks: true, gfm: true });
