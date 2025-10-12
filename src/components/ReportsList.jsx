@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { apiFetch } from "../lib/api";
+import { apiFetch } from "../lib/api2";
 
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:3001";
 
