@@ -179,7 +179,7 @@ useEffect(() => {
     const fetchCatsCount = async () => {
       try {
         setCatsTotalError(null);
-        setCatsTotalLoading(true);YAR
+        setCatsTotalLoading(true);
         const token = localStorage.getItem("token");
         const { data } = await api.get("/api/cats/count", {
           headers: { Authorization: token ? `Bearer ${token}` : "" },
